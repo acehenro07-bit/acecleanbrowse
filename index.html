@@ -3,1239 +3,496 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CleanBrowse — Browser Tanpa Iklan</title>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <title>Aegis — Secure Browser</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         :root {
-            --bg: #0a0f0d;
-            --bg-elevated: #111a16;
-            --card: #162019;
-            --border: #1e3328;
-            --fg: #e8f5ee;
-            --muted: #6b8f7b;
-            --accent: #00e68a;
-            --accent-dim: #00b36b;
-            --danger: #ff4757;
-            --warning: #ffa502;
-            --glow: rgba(0, 230, 138, 0.15);
+            --bg:#09090b;--bg2:#111113;--bg3:#18181b;
+            --card:#1c1c20;--card-h:#232328;
+            --border:#27272a;--border2:#3f3f46;
+            --fg:#fafafa;--fg2:#d4d4d8;--muted:#71717a;
+            --accent:#f59e0b;--accent2:#d97706;
+            --ag:rgba(245,158,11,.12);--ag2:rgba(245,158,11,.06);
+            --red:#ef4444;--red-bg:rgba(239,68,68,.1);
+            --green:#22c55e;--green-bg:rgba(34,197,94,.1);
+            --pw:320px;--th:52px;--r:8px;--rl:12px;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--fg);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+
+        .atmo{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+        .atmo::before{content:'';position:absolute;width:700px;height:700px;top:-250px;left:-200px;background:radial-gradient(circle,rgba(245,158,11,.05),transparent 70%);animation:dr 35s ease-in-out infinite alternate}
+        .atmo::after{content:'';position:absolute;width:500px;height:500px;bottom:-200px;right:-100px;background:radial-gradient(circle,rgba(245,158,11,.035),transparent 70%);animation:dr 28s ease-in-out infinite alternate-reverse}
+        @keyframes dr{0%{transform:translate(0,0)}100%{transform:translate(50px,35px)}}
+        .noise{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.02;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+        /* ===== TOP BAR ===== */
+        .topbar{position:relative;z-index:30;display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg2);border-bottom:1px solid var(--border);height:var(--th);flex-shrink:0}
+        .logo{display:flex;align-items:center;gap:7px;flex-shrink:0;margin-right:2px;user-select:none;cursor:pointer}
+        .logo-mk{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:13px;color:#000;font-weight:800;box-shadow:0 0 20px var(--ag)}
+        .logo-nm{font-weight:800;font-size:15px;letter-spacing:-.5px;color:var(--fg)}
+        .logo-nm em{font-style:normal;color:var(--accent)}
+        .sep{width:1px;height:22px;background:var(--border);flex-shrink:0;margin:0 2px}
+
+        .pbtn{width:30px;height:30px;border:1px solid transparent;background:0;color:var(--muted);border-radius:var(--r);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;position:relative;flex-shrink:0}
+        .pbtn:hover{background:var(--card);color:var(--fg2)}
+        .pbtn.on{background:var(--ag);color:var(--accent);border-color:rgba(245,158,11,.18)}
+        .pbtn .bd{position:absolute;top:1px;right:1px;min-width:14px;height:14px;padding:0 3px;background:var(--accent);color:#000;border-radius:7px;font-size:8px;font-weight:700;display:none;align-items:center;justify-content:center;line-height:1;font-family:'IBM Plex Mono',monospace}
+        .pbtn .bd.v{display:flex}
+
+        .nav{display:flex;gap:2px;flex-shrink:0;position:relative}
+        .nbtn{width:30px;height:30px;border:1px solid var(--border);background:var(--card);color:var(--muted);border-radius:var(--r);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .15s;flex-shrink:0}
+        .nbtn:hover:not(.off){background:var(--card-h);color:var(--fg)}
+        .nbtn:active:not(.off){transform:scale(.88)}
+        .nbtn.off{opacity:.2;pointer-events:none}
+
+        .nav-dd{position:absolute;top:calc(100% + 4px);left:0;min-width:260px;max-width:340px;max-height:300px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rl);box-shadow:0 16px 48px rgba(0,0,0,.5);z-index:100;padding:4px;display:none}
+        .nav-dd.v{display:block;animation:di .18s ease-out}
+        @keyframes di{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+        .ndi{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--fg2);transition:background .1s}
+        .ndi:hover{background:var(--card)}
+        .ndi i{color:var(--muted);font-size:10px;width:14px;text-align:center;flex-shrink:0}
+        .ndi span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+        .uw{flex:1;min-width:0;position:relative}
+        .ui{width:100%;height:34px;background:var(--bg3);border:1.5px solid var(--border);border-radius:9px;padding:0 68px 0 32px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--fg);outline:none;transition:all .2s}
+        .ui::placeholder{color:var(--muted);opacity:.4}
+        .ui:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--ag)}
+        .uic{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:11px;pointer-events:none;transition:color .2s}
+        .ui:focus~.uic{color:var(--accent)}
+        .ua{position:absolute;right:4px;top:50%;transform:translateY(-50%);display:flex;gap:2px}
+        .uab{width:26px;height:26px;border:none;background:0;color:var(--muted);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s}
+        .uab:hover{background:var(--border);color:var(--fg)}
+        .uab.bo{color:var(--accent)}
+        .uab.go{background:var(--accent);color:#000;font-size:10px;font-weight:700;opacity:0;width:0;padding:0;overflow:hidden;transition:all .2s}
+        .ui:focus~.ua .go,.ui:not(:placeholder-shown)~.ua .go{opacity:1;width:26px;padding:0}
+
+        .st{display:flex;align-items:center;gap:5px;flex-shrink:0}
+        .sb{display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:14px;font-size:9.5px;font-weight:600;border:1px solid}
+        .sb.sh{background:var(--green-bg);border-color:rgba(34,197,94,.15);color:var(--green)}
+        .sb.bl{background:var(--red-bg);border-color:rgba(239,68,68,.15);color:var(--red)}
+        .sb .cn{font-family:'IBM Plex Mono',monospace;min-width:14px;height:14px;padding:0 3px;border-radius:7px;font-size:8px;display:flex;align-items:center;justify-content:center}
+        .sb.sh .cn{background:rgba(34,197,94,.12)}
+        .sb.bl .cn{background:rgba(239,68,68,.12)}
+
+        /* ===== MAIN ===== */
+        .main{flex:1;position:relative;z-index:5;display:flex;overflow:hidden}
+
+        /* Panels */
+        .pnl{width:0;overflow:hidden;background:var(--bg2);transition:width .28s cubic-bezier(.4,0,.2,1);flex-shrink:0;display:flex;flex-direction:column}
+        .pnl.open{width:var(--pw)}
+        .pnl.rp{border-left:1px solid var(--border)}
+        .pnl.lp{border-right:1px solid var(--border)}
+        .pnl-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border);flex-shrink:0;min-height:46px}
+        .pnl-hd h3{font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px}
+        .pnl-ha{display:flex;gap:3px}
+        .phb{width:26px;height:26px;border:1px solid var(--border);background:var(--card);color:var(--muted);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .15s}
+        .phb:hover{background:var(--card-h);color:var(--fg)}
+        .phb.dg:hover{background:var(--red-bg);color:var(--red);border-color:rgba(239,68,68,.2)}
+        .pnl-sr{padding:8px 12px;flex-shrink:0;position:relative}
+        .pnl-sr input{width:100%;height:30px;background:var(--card);border:1px solid var(--border);border-radius:7px;padding:0 10px 0 28px;font-family:'Plus Jakarta Sans',sans-serif;font-size:11.5px;color:var(--fg);outline:none;transition:border-color .2s}
+        .pnl-sr input::placeholder{color:var(--muted);opacity:.4}
+        .pnl-sr input:focus{border-color:var(--accent)}
+        .pnl-sr i{position:absolute;left:22px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:10px}
+        .pnl-bd{flex:1;overflow-y:auto;padding:4px 6px}
+        .pnl-bd::-webkit-scrollbar{width:3px}
+        .pnl-bd::-webkit-scrollbar-track{background:0}
+        .pnl-bd::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+        .pd{font-size:9.5px;font-weight:700;color:var(--muted);padding:10px 8px 4px;text-transform:uppercase;letter-spacing:.6px;opacity:.6}
+        .pi{display:flex;align-items:center;gap:9px;padding:8px;border-radius:var(--r);cursor:pointer;transition:background .12s;margin-bottom:1px;border:1px solid transparent}
+        .pi:hover{background:var(--card)}
+        .pi.cur{background:var(--ag2);border-color:rgba(245,158,11,.1)}
+        .pi-ic{width:30px;height:30px;border-radius:6px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted);flex-shrink:0;overflow:hidden}
+        .pi-ic img{width:18px;height:18px;border-radius:3px}
+        .pi-bd{flex:1;min-width:0}
+        .pi-t{font-size:12px;font-weight:500;color:var(--fg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .pi-u{font-size:10px;color:var(--muted);font-family:'IBM Plex Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+        .pi-tm{font-size:9px;color:var(--muted);flex-shrink:0;opacity:.6}
+        .pi-x{width:22px;height:22px;border:none;background:0;color:var(--muted);border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;opacity:0;transition:all .12s;flex-shrink:0}
+        .pi:hover .pi-x{opacity:1}
+        .pi-x:hover{background:var(--red-bg);color:var(--red)}
+        .pe{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 16px;text-align:center}
+        .pe i{font-size:28px;color:var(--border2);margin-bottom:10px}
+        .pe p{font-size:11.5px;color:var(--muted);line-height:1.6}
+        .pnl-br{display:flex;gap:4px;padding:8px 12px;border-top:1px solid var(--border);flex-shrink:0}
+        .pnl-br button{flex:1;height:28px;border:1px solid var(--border);background:var(--card);color:var(--fg2);border-radius:6px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:10.5px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s}
+        .pnl-br button:hover{background:var(--card-h);border-color:var(--border2)}
+
+        /* ===== CONTENT ===== */
+        .cnt{flex:1;position:relative;overflow:hidden;min-width:0}
+
+        /* ===== WELCOME ===== */
+        .wlc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:8vh;gap:0;transition:opacity .3s,transform .3s;z-index:6;overflow-y:auto}
+        .wlc.off{opacity:0;transform:scale(.97);pointer-events:none}
+
+        .w-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px;user-select:none}
+        .w-logo-ico{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:24px;color:#000;font-weight:800;box-shadow:0 0 40px var(--ag),0 0 80px rgba(245,158,11,.06)}
+        .w-logo-txt{font-size:32px;font-weight:800;letter-spacing:-1px}
+        .w-logo-txt em{font-style:normal;color:var(--accent)}
+
+        /* === KOTAK INPUT BESAR === */
+        .w-search{position:relative;width:100%;max-width:620px;padding:0 20px;margin-bottom:20px}
+        .w-search-box{
+            width:100%;height:54px;
+            background:var(--bg3);border:1.5px solid var(--border);
+            border-radius:16px;padding:0 56px 0 52px;
+            font-family:'IBM Plex Mono',monospace;font-size:15px;
+            color:var(--fg);outline:none;
+            transition:all .25s;
+        }
+        .w-search-box::placeholder{color:var(--muted);opacity:.4}
+        .w-search-box:focus{
+            border-color:var(--accent);
+            box-shadow:0 0 0 4px var(--ag),0 8px 32px rgba(0,0,0,.3);
+            background:var(--bg2);
+        }
+        .w-search-ico{
+            position:absolute;left:38px;top:50%;transform:translateY(-50%);
+            color:var(--muted);font-size:16px;pointer-events:none;transition:color .2s;
+        }
+        .w-search-box:focus~.w-search-ico{color:var(--accent)}
+        .w-search-go{
+            position:absolute;right:24px;top:50%;transform:translateY(-50%);
+            width:36px;height:36px;border:none;
+            background:var(--accent);color:#000;border-radius:10px;
+            cursor:pointer;display:flex;align-items:center;justify-content:center;
+            font-size:14px;font-weight:700;
+            opacity:.4;transition:all .2s;
+        }
+        .w-search-box:focus~.w-search-go,.w-search-box:not(:placeholder-shown)~.w-search-go{opacity:1}
+        .w-search-go:hover{background:#fbbf24;transform:translateY(-50%) scale(1.05)}
+
+        /* Shortcut hints di bawah search */
+        .w-hints{display:flex;gap:16px;margin-bottom:32px;opacity:.5}
+        .w-hint{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+        .w-hint kbd{
+            padding:2px 6px;background:var(--card);border:1px solid var(--border);
+            border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:10px;
+            color:var(--fg2);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        /* Quick links */
+        .w-links{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:560px;padding:0 20px;margin-bottom:24px}
+        .w-link{display:flex;align-items:center;gap:7px;padding:9px 16px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .2s;font-size:12px;color:var(--muted)}
+        .w-link:hover{border-color:var(--accent);color:var(--fg);transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.3)}
+        .w-link i{color:var(--accent);font-size:12px}
 
-        body {
-            font-family: 'Space Grotesk', sans-serif;
-            background: var(--bg);
-            color: var(--fg);
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
+        .w-feats{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;padding:0 20px}
+        .w-feat{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--muted)}
+        .w-feat i{color:var(--accent);font-size:11px}
 
-        /* === Animated Background === */
-        .bg-layer {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
-            overflow: hidden;
-        }
-        .bg-layer .orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(120px);
-            opacity: 0.3;
-            animation: orbFloat 20s ease-in-out infinite alternate;
-        }
-        .bg-layer .orb:nth-child(1) {
-            width: 500px; height: 500px;
-            background: radial-gradient(circle, #00e68a33, transparent 70%);
-            top: -10%; left: -10%;
-        }
-        .bg-layer .orb:nth-child(2) {
-            width: 400px; height: 400px;
-            background: radial-gradient(circle, #00b36b22, transparent 70%);
-            bottom: -15%; right: -5%;
-            animation-delay: -8s;
-        }
-        .bg-layer .orb:nth-child(3) {
-            width: 300px; height: 300px;
-            background: radial-gradient(circle, #00e68a15, transparent 70%);
-            top: 40%; left: 50%;
-            animation-delay: -14s;
-        }
-        @keyframes orbFloat {
-            0% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(40px, -30px) scale(1.1); }
-            66% { transform: translate(-20px, 20px) scale(0.95); }
-            100% { transform: translate(10px, -10px) scale(1.05); }
-        }
+        /* Error */
+        .err{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:7;background:var(--bg)}
+        .err.on{display:flex}
+        .err i{font-size:40px;color:var(--accent)}
+        .err h3{font-size:18px;font-weight:700}
+        .err p{color:var(--muted);font-size:12.5px;max-width:400px;text-align:center;line-height:1.6}
+        .err button{margin-top:6px;padding:8px 20px;background:var(--accent);color:#000;border:none;border-radius:var(--r);font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:12.5px;cursor:pointer;transition:all .15s}
+        .err button:hover{filter:brightness(1.1)}
 
-        /* === Grid Pattern Overlay === */
-        .grid-pattern {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
-            background-image:
-                linear-gradient(rgba(0,230,138,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0,230,138,0.03) 1px, transparent 1px);
-            background-size: 60px 60px;
-        }
+        .frm{width:100%;height:100%;border:none;background:#fff;display:none}
+        .frm.on{display:block}
 
-        /* === Top Bar === */
-        .top-bar {
-            position: relative;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 16px;
-            background: var(--bg-elevated);
-            border-bottom: 1px solid var(--border);
-            backdrop-filter: blur(20px);
-            flex-shrink: 0;
-        }
+        .ldb{position:absolute;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--accent),#fbbf24);z-index:20;width:0;box-shadow:0 0 10px var(--ag);border-radius:0 2px 2px 0}
+        .ldb.run{animation:lp 2.5s ease-out forwards}
+        @keyframes lp{0%{width:0}15%{width:20%}45%{width:55%}75%{width:80%}100%{width:100%;opacity:0}}
 
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-shrink: 0;
-            cursor: default;
-        }
-        .logo-icon {
-            width: 36px; height: 36px;
-            background: linear-gradient(135deg, var(--accent), var(--accent-dim));
-            border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 16px; color: var(--bg);
-            box-shadow: 0 0 20px var(--glow);
-            position: relative;
-            overflow: hidden;
-        }
-        .logo-icon::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.25) 50%, transparent 60%);
-            animation: logoShine 3s ease-in-out infinite;
-        }
-        @keyframes logoShine {
-            0%, 100% { transform: translateX(-100%); }
-            50% { transform: translateX(100%); }
-        }
-        .logo-text {
-            font-weight: 700;
-            font-size: 18px;
-            letter-spacing: -0.5px;
-            color: var(--fg);
-        }
-        .logo-text span { color: var(--accent); }
+        .toasts{position:fixed;top:58px;right:12px;z-index:200;display:flex;flex-direction:column;gap:5px;pointer-events:none}
+        .tst{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);font-size:11.5px;color:var(--fg2);box-shadow:0 8px 32px rgba(0,0,0,.45);animation:ti .25s ease-out;pointer-events:auto;backdrop-filter:blur(12px);max-width:320px}
+        .tst.tl{border-left:3px solid var(--red)}
+        .tst.tn{border-left:3px solid var(--green)}
+        .tst.tw{border-left:3px solid var(--accent)}
+        .tst.out{animation:to .2s ease-in forwards}
+        @keyframes ti{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes to{to{opacity:0;transform:translateX(24px)}}
 
-        /* === Nav Buttons === */
-        .nav-controls {
-            display: flex;
-            gap: 4px;
-            flex-shrink: 0;
-        }
-        .nav-btn {
-            width: 34px; height: 34px;
-            border: 1px solid var(--border);
-            background: var(--card);
-            color: var(--muted);
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 13px;
-            transition: all 0.2s;
-        }
-        .nav-btn:hover {
-            background: var(--border);
-            color: var(--fg);
-            border-color: var(--accent-dim);
-        }
-        .nav-btn:active { transform: scale(0.92); }
-        .nav-btn.disabled {
-            opacity: 0.3;
-            pointer-events: none;
-        }
+        #impF{display:none}
 
-        /* === URL Bar === */
-        .url-bar-wrapper {
-            flex: 1;
-            position: relative;
-            min-width: 0;
+        @media(max-width:768px){
+            .logo-nm{display:none}.sb span:not(.cn){display:none}
+            :root{--pw:260px}
+            .pnl.open{position:absolute;z-index:25;height:100%}
+            .pnl.rp.open{right:0;left:auto}
+            .w-logo-txt{font-size:24px}
+            .w-logo-ico{width:44px;height:44px;font-size:18px;border-radius:11px}
+            .w-search-box{height:46px;font-size:13px;border-radius:12px}
+            .w-hints{display:none}
         }
-        .url-bar {
-            width: 100%;
-            height: 40px;
-            background: var(--card);
-            border: 1.5px solid var(--border);
-            border-radius: 10px;
-            padding: 0 42px 0 38px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
-            color: var(--fg);
-            outline: none;
-            transition: all 0.25s;
-        }
-        .url-bar::placeholder { color: var(--muted); opacity: 0.6; }
-        .url-bar:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px var(--glow), 0 0 30px var(--glow);
-            background: var(--bg-elevated);
-        }
-        .url-bar-icon {
-            position: absolute;
-            left: 12px; top: 50%;
-            transform: translateY(-50%);
-            color: var(--muted);
-            font-size: 13px;
-            pointer-events: none;
-            transition: color 0.2s;
-        }
-        .url-bar:focus ~ .url-bar-icon { color: var(--accent); }
-        .url-go-btn {
-            position: absolute;
-            right: 5px; top: 50%;
-            transform: translateY(-50%);
-            width: 30px; height: 30px;
-            border: none;
-            background: var(--accent);
-            color: var(--bg);
-            border-radius: 7px;
-            cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 12px;
-            font-weight: 700;
-            transition: all 0.2s;
-            opacity: 0;
-        }
-        .url-bar:focus ~ .url-go-btn,
-        .url-go-btn.visible { opacity: 1; }
-        .url-go-btn:hover { background: #00ff99; transform: translateY(-50%) scale(1.05); }
-
-        /* === Status Indicators === */
-        .status-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-shrink: 0;
-        }
-        .status-badge {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.3px;
-            border: 1px solid;
-            transition: all 0.3s;
-        }
-        .status-badge.shield {
-            background: rgba(0,230,138,0.08);
-            border-color: rgba(0,230,138,0.2);
-            color: var(--accent);
-        }
-        .status-badge.blocked {
-            background: rgba(255,71,87,0.08);
-            border-color: rgba(255,71,87,0.2);
-            color: var(--danger);
-        }
-        .status-badge .count {
-            font-family: 'JetBrains Mono', monospace;
-            min-width: 16px;
-            text-align: center;
-            padding: 1px 5px;
-            border-radius: 10px;
-            font-size: 10px;
-        }
-        .status-badge.shield .count { background: rgba(0,230,138,0.15); }
-        .status-badge.blocked .count { background: rgba(255,71,87,0.15); }
-
-        .settings-btn {
-            width: 34px; height: 34px;
-            border: 1px solid var(--border);
-            background: var(--card);
-            color: var(--muted);
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-        .settings-btn:hover {
-            background: var(--border);
-            color: var(--fg);
-        }
-
-        /* === Main Content Area === */
-        .main-area {
-            flex: 1;
-            position: relative;
-            z-index: 5;
-            overflow: hidden;
-        }
-
-        /* === Welcome Screen === */
-        .welcome-screen {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 30px;
-            transition: opacity 0.4s, transform 0.4s;
-            z-index: 6;
-        }
-        .welcome-screen.hidden {
-            opacity: 0;
-            transform: scale(0.96);
-            pointer-events: none;
-        }
-        .welcome-shield {
-            width: 120px; height: 120px;
-            position: relative;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .shield-ring {
-            position: absolute;
-            border-radius: 50%;
-            border: 2px solid transparent;
-            animation: shieldPulse 3s ease-in-out infinite;
-        }
-        .shield-ring:nth-child(1) {
-            inset: 0;
-            border-top-color: var(--accent);
-            border-right-color: var(--accent);
-        }
-        .shield-ring:nth-child(2) {
-            inset: 12px;
-            border-bottom-color: var(--accent-dim);
-            border-left-color: var(--accent-dim);
-            animation-delay: -1s;
-            animation-direction: reverse;
-        }
-        .shield-ring:nth-child(3) {
-            inset: 24px;
-            border-top-color: rgba(0,230,138,0.4);
-            border-right-color: rgba(0,230,138,0.4);
-            animation-delay: -2s;
-        }
-        @keyframes shieldPulse {
-            0%, 100% { transform: rotate(0deg); opacity: 0.5; }
-            50% { transform: rotate(180deg); opacity: 1; }
-        }
-        .shield-icon {
-            font-size: 42px;
-            color: var(--accent);
-            z-index: 1;
-            text-shadow: 0 0 40px var(--glow);
-        }
-        .welcome-title {
-            font-size: 32px;
-            font-weight: 700;
-            text-align: center;
-            letter-spacing: -1px;
-        }
-        .welcome-title span { color: var(--accent); }
-        .welcome-sub {
-            font-size: 15px;
-            color: var(--muted);
-            text-align: center;
-            max-width: 500px;
-            line-height: 1.7;
-        }
-
-        /* Quick Links */
-        .quick-links {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            justify-content: center;
-            max-width: 600px;
-        }
-        .quick-link {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 18px;
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.25s;
-            font-size: 13px;
-            color: var(--muted);
-            text-decoration: none;
-        }
-        .quick-link:hover {
-            border-color: var(--accent);
-            color: var(--fg);
-            background: var(--bg-elevated);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-        }
-        .quick-link i {
-            color: var(--accent);
-            font-size: 14px;
-        }
-
-        /* Features */
-        .features-row {
-            display: flex;
-            gap: 24px;
-            margin-top: 10px;
-        }
-        .feature-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            color: var(--muted);
-        }
-        .feature-item i {
-            color: var(--accent);
-            font-size: 14px;
-        }
-
-        /* === Iframe === */
-        .browse-frame {
-            width: 100%;
-            height: 100%;
-            border: none;
-            background: #fff;
-            display: none;
-        }
-        .browse-frame.active { display: block; }
-
-        /* === Toast Notification === */
-        .toast-container {
-            position: fixed;
-            top: 70px;
-            right: 16px;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .toast {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 18px;
-            background: var(--bg-elevated);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            font-size: 13px;
-            color: var(--fg);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
-            animation: toastIn 0.35s ease-out;
-            backdrop-filter: blur(20px);
-            max-width: 360px;
-        }
-        .toast.blocked-toast { border-left: 3px solid var(--danger); }
-        .toast.info-toast { border-left: 3px solid var(--accent); }
-        .toast.warn-toast { border-left: 3px solid var(--warning); }
-        .toast i.fa-shield-halved { color: var(--accent); }
-        .toast i.fa-ban { color: var(--danger); }
-        .toast i.fa-triangle-exclamation { color: var(--warning); }
-        .toast-exit { animation: toastOut 0.3s ease-in forwards; }
-        @keyframes toastIn {
-            from { opacity: 0; transform: translateX(40px) scale(0.95); }
-            to { opacity: 1; transform: translateX(0) scale(1); }
-        }
-        @keyframes toastOut {
-            to { opacity: 0; transform: translateX(40px) scale(0.95); }
-        }
-
-        /* === Settings Panel === */
-        .settings-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 100;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(8px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
-        }
-        .settings-overlay.open {
-            opacity: 1;
-            pointer-events: all;
-        }
-        .settings-panel {
-            width: 440px;
-            max-width: 92vw;
-            background: var(--bg-elevated);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 28px;
-            transform: scale(0.92) translateY(20px);
-            transition: transform 0.3s;
-            box-shadow: 0 24px 80px rgba(0,0,0,0.5);
-        }
-        .settings-overlay.open .settings-panel {
-            transform: scale(1) translateY(0);
-        }
-        .settings-title {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .settings-title i { color: var(--accent); }
-        .setting-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 0;
-            border-bottom: 1px solid var(--border);
-        }
-        .setting-item:last-child { border-bottom: none; }
-        .setting-label {
-            font-size: 14px;
-            font-weight: 500;
-        }
-        .setting-desc {
-            font-size: 11px;
-            color: var(--muted);
-            margin-top: 3px;
-        }
-        .toggle {
-            width: 44px; height: 24px;
-            background: var(--border);
-            border-radius: 12px;
-            cursor: pointer;
-            position: relative;
-            transition: background 0.25s;
-            flex-shrink: 0;
-        }
-        .toggle.on { background: var(--accent); }
-        .toggle::after {
-            content: '';
-            position: absolute;
-            width: 18px; height: 18px;
-            background: #fff;
-            border-radius: 50%;
-            top: 3px; left: 3px;
-            transition: transform 0.25s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        .toggle.on::after { transform: translateX(20px); }
-        .close-settings {
-            width: 100%;
-            margin-top: 18px;
-            padding: 11px;
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            color: var(--fg);
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .close-settings:hover {
-            background: var(--border);
-            border-color: var(--accent-dim);
-        }
-
-        /* === Loading Bar === */
-        .loading-bar {
-            position: absolute;
-            top: 0; left: 0;
-            height: 2px;
-            background: linear-gradient(90deg, var(--accent), #00ff99);
-            z-index: 20;
-            width: 0%;
-            transition: width 0.3s;
-            box-shadow: 0 0 12px var(--accent);
-            border-radius: 0 2px 2px 0;
-        }
-        .loading-bar.active {
-            animation: loadProgress 2s ease-out forwards;
-        }
-        @keyframes loadProgress {
-            0% { width: 0%; }
-            20% { width: 30%; }
-            50% { width: 60%; }
-            80% { width: 85%; }
-            100% { width: 100%; opacity: 0; }
-        }
-
-        /* === Error State === */
-        .error-screen {
-            position: absolute;
-            inset: 0;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 16px;
-            z-index: 7;
-            background: var(--bg);
-        }
-        .error-screen.active { display: flex; }
-        .error-screen i { font-size: 48px; color: var(--warning); }
-        .error-screen h3 { font-size: 22px; font-weight: 700; }
-        .error-screen p { color: var(--muted); font-size: 14px; max-width: 460px; text-align: center; line-height: 1.6; }
-        .error-screen button {
-            margin-top: 10px;
-            padding: 10px 24px;
-            background: var(--accent);
-            color: var(--bg);
-            border: none;
-            border-radius: 8px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .error-screen button:hover { background: #00ff99; transform: translateY(-1px); }
-
-        /* === Responsive === */
-        @media (max-width: 768px) {
-            .logo-text { display: none; }
-            .status-badge span:not(.count) { display: none; }
-            .features-row { flex-direction: column; gap: 8px; }
-            .welcome-title { font-size: 24px; }
-            .quick-links { padding: 0 16px; }
-        }
-
-        /* === Reduced Motion === */
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after {
-                animation-duration: 0.01ms !important;
-                transition-duration: 0.01ms !important;
-            }
-        }
+        @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
     </style>
 </head>
 <body>
 
-    <!-- Latar belakang animasi -->
-    <div class="bg-layer" aria-hidden="true">
-        <div class="orb"></div>
-        <div class="orb"></div>
-        <div class="orb"></div>
+<div class="atmo"></div>
+<div class="noise"></div>
+<input type="file" id="impF" accept=".json">
+
+<header class="topbar">
+    <div class="logo" id="logoBtn">
+        <div class="logo-mk"><i class="fa-solid fa-shield-halved"></i></div>
+        <div class="logo-nm"><em>Aegis</em> Browser</div>
     </div>
-    <div class="grid-pattern" aria-hidden="true"></div>
-
-    <!-- Top Bar -->
-    <header class="top-bar">
-        <div class="logo">
-            <div class="logo-icon"><i class="fa-solid fa-shield-halved"></i></div>
-            <div class="logo-text">Clean<span>Browse</span></div>
-        </div>
-
-        <nav class="nav-controls" aria-label="Kontrol navigasi">
-            <button class="nav-btn disabled" id="btnBack" title="Kembali" aria-label="Kembali"><i class="fa-solid fa-arrow-left"></i></button>
-            <button class="nav-btn disabled" id="btnForward" title="Maju" aria-label="Maju"><i class="fa-solid fa-arrow-right"></i></button>
-            <button class="nav-btn" id="btnRefresh" title="Muat ulang" aria-label="Muat ulang"><i class="fa-solid fa-rotate-right"></i></button>
-            <button class="nav-btn" id="btnHome" title="Beranda" aria-label="Beranda"><i class="fa-solid fa-house"></i></button>
-        </nav>
-
-        <div class="url-bar-wrapper">
-            <input
-                type="url"
-                class="url-bar"
-                id="urlInput"
-                placeholder="Masukkan URL website..."
-                aria-label="Alamat URL"
-                autocomplete="off"
-                spellcheck="false"
-            >
-            <i class="fa-solid fa-globe url-bar-icon"></i>
-            <button class="url-go-btn" id="btnGo" aria-label="Buka URL"><i class="fa-solid fa-arrow-right"></i></button>
-        </div>
-
-        <div class="status-group">
-            <div class="status-badge shield" title="Proteksi aktif">
-                <i class="fa-solid fa-shield-halved"></i>
-                <span>Aktif</span>
-            </div>
-            <div class="status-badge blocked" title="Pop-up diblokir">
-                <i class="fa-solid fa-ban"></i>
-                <span>Diblokir</span>
-                <span class="count" id="blockedCount">0</span>
-            </div>
-            <button class="settings-btn" id="btnSettings" title="Pengaturan" aria-label="Pengaturan">
-                <i class="fa-solid fa-sliders"></i>
-            </button>
-        </div>
-    </header>
-
-    <!-- Area Konten Utama -->
-    <main class="main-area" id="mainArea">
-        <div class="loading-bar" id="loadingBar"></div>
-
-        <!-- Layar Selamat Datang -->
-        <div class="welcome-screen" id="welcomeScreen">
-            <div class="welcome-shield" aria-hidden="true">
-                <div class="shield-ring"></div>
-                <div class="shield-ring"></div>
-                <div class="shield-ring"></div>
-                <i class="fa-solid fa-shield-halved shield-icon"></i>
-            </div>
-            <h1 class="welcome-title">Browsing <span>Bebas Iklan</span></h1>
-            <p class="welcome-sub">
-                Masukkan URL website di atas untuk mulai browsing tanpa gangguan pop-up iklan.
-                Semua jendela iklan akan otomatis diblokir dan ditutup.
-            </p>
-            <div class="quick-links">
-                <a class="quick-link" data-url="https://wikipedia.org">
-                    <i class="fa-brands fa-wikipedia-w"></i> Wikipedia
-                </a>
-                <a class="quick-link" data-url="https://duckduckgo.com">
-                    <i class="fa-solid fa-magnifying-glass"></i> DuckDuckGo
-                </a>
-                <a class="quick-link" data-url="https://codepen.io">
-                    <i class="fa-brands fa-codepen"></i> CodePen
-                </a>
-                <a class="quick-link" data-url="https://developer.mozilla.org">
-                    <i class="fa-solid fa-book"></i> MDN Docs
-                </a>
-                <a class="quick-link" data-url="https://css-tricks.com">
-                    <i class="fa-brands fa-css3-alt"></i> CSS Tricks
-                </a>
-            </div>
-            <div class="features-row">
-                <div class="feature-item"><i class="fa-solid fa-ban"></i> Blokir Pop-up</div>
-                <div class="feature-item"><i class="fa-solid fa-eye-slash"></i> Blokir Overlay Iklan</div>
-                <div class="feature-item"><i class="fa-solid fa-bolt"></i> Navigasi Cepat</div>
-            </div>
-        </div>
-
-        <!-- Layar Error -->
-        <div class="error-screen" id="errorScreen">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-            <h3>Website Tidak Dapat Dimuat</h3>
-            <p id="errorMsg">Website ini tidak mengizinkan ditampilkan di dalam iframe karena kebijakan keamanan (X-Frame-Options / CSP). Beberapa website membatasi akses ini.</p>
-            <button id="btnErrorBack">Kembali ke Beranda</button>
-        </div>
-
-        <!-- Iframe Browser -->
-        <iframe
-            class="browse-frame"
-            id="browseFrame"
-            sandbox="allow-same-origin allow-scripts allow-forms allow-top-navigation-by-user-activation"
-            referrerpolicy="no-referrer"
-            aria-label="Area browsing website"
-        ></iframe>
-    </main>
-
-    <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer" aria-live="polite"></div>
-
-    <!-- Settings Panel -->
-    <div class="settings-overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-label="Pengaturan">
-        <div class="settings-panel">
-            <div class="settings-title"><i class="fa-solid fa-sliders"></i> Pengaturan</div>
-
-            <div class="setting-item">
-                <div>
-                    <div class="setting-label">Blokir Pop-up</div>
-                    <div class="setting-desc">Mencegah jendela pop-up iklan terbuka</div>
-                </div>
-                <div class="toggle on" data-setting="blockPopups" role="switch" aria-checked="true" tabindex="0"></div>
-            </div>
-
-            <div class="setting-item">
-                <div>
-                    <div class="setting-label">Blokir Navigasi Baru</div>
-                    <div class="setting-desc">Mencegah website membuka tab/jendela baru</div>
-                </div>
-                <div class="toggle on" data-setting="blockNewNav" role="switch" aria-checked="true" tabindex="0"></div>
-            </div>
-
-            <div class="setting-item">
-                <div>
-                    <div class="setting-label">Notifikasi Blokir</div>
-                    <div class="setting-desc">Tampilkan toast saat pop-up diblokir</div>
-                </div>
-                <div class="toggle on" data-setting="showNotifications" role="switch" aria-checked="true" tabindex="0"></div>
-            </div>
-
-            <div class="setting-item">
-                <div>
-                    <div class="setting-label">Izinkan JavaScript</div>
-                    <div class="setting-desc">Beberapa website membutuhkan JS untuk berfungsi</div>
-                </div>
-                <div class="toggle on" data-setting="allowJS" role="switch" aria-checked="true" tabindex="0"></div>
-            </div>
-
-            <div class="setting-item">
-                <div>
-                    <div class="setting-label">Izinkan Formulir</div>
-                    <div class="setting-desc">Izinkan pengisian dan pengiriman formulir</div>
-                </div>
-                <div class="toggle on" data-setting="allowForms" role="switch" aria-checked="true" tabindex="0"></div>
-            </div>
-
-            <button class="close-settings" id="btnCloseSettings">Tutup Pengaturan</button>
+    <div class="sep"></div>
+    <button class="pbtn" id="tH" title="Riwayat (H)" aria-label="Riwayat"><i class="fa-solid fa-clock-rotate-left"></i><span class="bd" id="hB">0</span></button>
+    <button class="pbtn" id="tB" title="Bookmark (B)" aria-label="Bookmark"><i class="fa-regular fa-bookmark"></i><span class="bd" id="bB">0</span></button>
+    <div class="sep"></div>
+    <nav class="nav" aria-label="Navigasi">
+        <button class="nbtn off" id="nBk" title="Kembali (Alt+←)" aria-label="Kembali"><i class="fa-solid fa-chevron-left"></i></button>
+        <button class="nbtn off" id="nFw" title="Maju (Alt+→)" aria-label="Maju"><i class="fa-solid fa-chevron-right"></i></button>
+        <div class="nav-dd" id="ddBk"></div>
+        <div class="nav-dd" id="ddFw"></div>
+        <button class="nbtn" id="nRf" title="Muat ulang (F5)" aria-label="Muat ulang"><i class="fa-solid fa-rotate-right"></i></button>
+        <button class="nbtn" id="nHm" title="Beranda" aria-label="Beranda"><i class="fa-solid fa-house"></i></button>
+    </nav>
+    <div class="uw">
+        <input type="url" class="ui" id="urlI" placeholder="Masukkan URL..." aria-label="URL" autocomplete="off" spellcheck="false">
+        <i class="fa-solid fa-globe uic"></i>
+        <div class="ua">
+            <button class="uab" id="uBm" title="Bookmark (Ctrl+D)" aria-label="Bookmark"><i class="fa-regular fa-bookmark"></i></button>
+            <button class="uab go" id="uGo" aria-label="Buka"><i class="fa-solid fa-arrow-right"></i></button>
         </div>
     </div>
+    <div class="st">
+        <div class="sb sh"><i class="fa-solid fa-shield-halved"></i><span>Aktif</span></div>
+        <div class="sb bl"><i class="fa-solid fa-ban"></i><span class="cn" id="blkC">0</span></div>
+    </div>
+</header>
 
-    <script>
-        // === State ===
-        const state = {
-            blockedCount: 0,
-            currentUrl: '',
-            history: [],
-            historyIndex: -1,
-            settings: {
-                blockPopups: true,
-                blockNewNav: true,
-                showNotifications: true,
-                allowJS: true,
-                allowForms: true
-            }
-        };
+<div class="main">
+    <aside class="pnl lp" id="pH" aria-label="Riwayat">
+        <div class="pnl-hd">
+            <h3><i class="fa-solid fa-clock-rotate-left" style="color:var(--accent)"></i> Riwayat</h3>
+            <div class="pnl-ha">
+                <button class="phb dg" id="hCl" title="Hapus semua"><i class="fa-solid fa-trash"></i></button>
+                <button class="phb" id="hX" title="Tutup"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+        <div class="pnl-sr"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="hS" placeholder="Cari riwayat..."></div>
+        <div class="pnl-bd" id="hL"></div>
+        <div class="pnl-br">
+            <button id="hEx"><i class="fa-solid fa-download"></i> Ekspor</button>
+            <button id="hIm"><i class="fa-solid fa-upload"></i> Impor</button>
+        </div>
+    </aside>
 
-        // === Elemen DOM ===
-        const urlInput = document.getElementById('urlInput');
-        const btnGo = document.getElementById('btnGo');
-        const btnBack = document.getElementById('btnBack');
-        const btnForward = document.getElementById('btnForward');
-        const btnRefresh = document.getElementById('btnRefresh');
-        const btnHome = document.getElementById('btnHome');
-        const btnSettings = document.getElementById('btnSettings');
-        const btnCloseSettings = document.getElementById('btnCloseSettings');
-        const btnErrorBack = document.getElementById('btnErrorBack');
-        const browseFrame = document.getElementById('browseFrame');
-        const welcomeScreen = document.getElementById('welcomeScreen');
-        const errorScreen = document.getElementById('errorScreen');
-        const loadingBar = document.getElementById('loadingBar');
-        const blockedCountEl = document.getElementById('blockedCount');
-        const toastContainer = document.getElementById('toastContainer');
-        const settingsOverlay = document.getElementById('settingsOverlay');
+    <div class="cnt" id="cA">
+        <div class="ldb" id="ldB"></div>
 
-        // === Pop-up Blocker: Override window.open ===
-        const originalWindowOpen = window.open.bind(window);
-        window.open = function(...args) {
-            if (state.settings.blockPopups) {
-                blockPopup('window.open', args[0]);
-                return null; // Blokir pop-up
-            }
-            return originalWindowOpen(...args);
-        };
+        <!-- ===== WELCOME SCREEN ===== -->
+        <div class="wlc" id="wS">
+            <div class="w-logo">
+                <div class="w-logo-ico"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="w-logo-txt"><em>Aegis</em> Browser</div>
+            </div>
 
-        // === Tangkap klik link dengan target=_blank ===
-        document.addEventListener('click', function(e) {
-            const link = e.target.closest('a');
-            if (link && (link.target === '_blank' || link.target === '_new')) {
-                if (state.settings.blockNewNav) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    blockPopup('link target', link.href);
-                }
-            }
-        }, true);
+            <!-- KOTAK INPUT BESAR SEPERTI GOOGLE -->
+            <div class="w-search">
+                <input type="text" class="w-search-box" id="wSearchIn" placeholder="Ketik URL atau kata kunci..." autocomplete="off" spellcheck="false" aria-label="Cari atau masukkan URL">
+                <i class="fa-solid fa-magnifying-glass w-search-ico"></i>
+                <button class="w-search-go" id="wSearchGo" aria-label="Buka"><i class="fa-solid fa-arrow-right"></i></button>
+            </div>
 
-        // === Blokir beforeunload yang digunakan untuk iklan ===
-        window.addEventListener('beforeunload', function(e) {
-            // Tidak memblokir navigasi normal pengguna
-        });
+            <div class="w-hints">
+                <div class="w-hint"><kbd>Enter</kbd> Buka</div>
+                <div class="w-hint"><kbd>Ctrl+L</kbd> URL bar</div>
+                <div class="w-hint"><kbd>Ctrl+D</kbd> Bookmark</div>
+                <div class="w-hint"><kbd>H</kbd> Riwayat</div>
+                <div class="w-hint"><kbd>B</kbd> Bookmark</div>
+            </div>
 
-        // === Fungsi Blokir Pop-up ===
-        function blockPopup(source, url) {
-            state.blockedCount++;
-            blockedCountEl.textContent = state.blockedCount;
+            <div class="w-links">
+                <a class="w-link" data-u="https://wikipedia.org"><i class="fa-brands fa-wikipedia-w"></i> Wikipedia</a>
+                <a class="w-link" data-u="https://duckduckgo.com"><i class="fa-solid fa-magnifying-glass"></i> DuckDuckGo</a>
+                <a class="w-link" data-u="https://codepen.io"><i class="fa-brands fa-codepen"></i> CodePen</a>
+                <a class="w-link" data-u="https://developer.mozilla.org"><i class="fa-solid fa-book"></i> MDN Docs</a>
+                <a class="w-link" data-u="https://css-tricks.com"><i class="fa-brands fa-css3-alt"></i> CSS Tricks</a>
+            </div>
 
-            // Animasi angka
-            blockedCountEl.style.transform = 'scale(1.4)';
-            blockedCountEl.style.transition = 'transform 0.15s';
-            setTimeout(() => {
-                blockedCountEl.style.transform = 'scale(1)';
-            }, 150);
+            <div class="w-feats">
+                <div class="w-feat"><i class="fa-solid fa-shield-halved"></i> Blokir Pop-up</div>
+                <div class="w-feat"><i class="fa-solid fa-clock-rotate-left"></i> Riwayat</div>
+                <div class="w-feat"><i class="fa-solid fa-bookmark"></i> Bookmark</div>
+                <div class="w-feat"><i class="fa-solid fa-chevron-left"></i> Navigasi</div>
+                <div class="w-feat"><i class="fa-solid fa-download"></i> Impor/Ekspor</div>
+            </div>
+        </div>
 
-            if (state.settings.showNotifications) {
-                const displayUrl = url ? (url.length > 50 ? url.substring(0, 50) + '...' : url) : 'tidak diketahui';
-                showToast(`Pop-up diblokir (${source}): ${displayUrl}`, 'blocked-toast', 'fa-ban');
-            }
-        }
+        <div class="err" id="eS"><i class="fa-solid fa-triangle-exclamation"></i><h3>Tidak Dapat Dimuat</h3><p>Website ini memblokir tampilan di iframe (X-Frame-Options / CSP).</p><button id="eBk">Kembali</button></div>
+        <iframe class="frm" id="bF" sandbox="allow-same-origin allow-scripts allow-forms allow-top-navigation-by-user-activation" referrerpolicy="no-referrer" aria-label="Browser"></iframe>
+    </div>
 
-        // === Toast Notification ===
-        function showToast(message, type, icon) {
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerHTML = `<i class="fa-solid ${icon}"></i><span>${message}</span>`;
-            toastContainer.appendChild(toast);
+    <aside class="pnl rp" id="pB" aria-label="Bookmark">
+        <div class="pnl-hd">
+            <h3><i class="fa-solid fa-bookmark" style="color:var(--accent)"></i> Bookmark</h3>
+            <div class="pnl-ha">
+                <button class="phb dg" id="bCl" title="Hapus semua"><i class="fa-solid fa-trash"></i></button>
+                <button class="phb" id="bX" title="Tutup"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+        <div class="pnl-sr"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="bS" placeholder="Cari bookmark..."></div>
+        <div class="pnl-bd" id="bL"></div>
+        <div class="pnl-br">
+            <button id="bEx"><i class="fa-solid fa-download"></i> Ekspor</button>
+            <button id="bIm"><i class="fa-solid fa-upload"></i> Impor</button>
+        </div>
+    </aside>
+</div>
 
-            // Batasi maksimal 4 toast
-            const toasts = toastContainer.querySelectorAll('.toast');
-            if (toasts.length > 4) {
-                toasts[0].remove();
-            }
+<div class="toasts" id="tC" aria-live="polite"></div>
 
-            // Auto-remove setelah 3 detik
-            setTimeout(() => {
-                toast.classList.add('toast-exit');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
+<script>
+const $=s=>document.getElementById(s);
+const esc=s=>{const d=document.createElement('div');d.textContent=s;return d.innerHTML};
+const dom=u=>{try{return new URL(u).hostname}catch(e){return u}};
+const fav=u=>{try{return'https://www.google.com/s2/favicons?domain='+new URL(u).origin+'&sz=32'}catch(e){return ''}};
+const nrm=u=>{if(!u)return '';return /^https?:\/\//i.test(u)?u:'https://'+u};
 
-        // === Navigasi ===
-        function navigateTo(url) {
-            if (!url) return;
+// State
+const S={blk:0,url:'',nv:[],ni:-1,hist:[],bm:[],hp:false,bp:false};
+const K={h:'aegis_h',b:'aegis_b'};
+function ld(){try{const a=localStorage.getItem(K.h),b=localStorage.getItem(K.b);if(a)S.hist=JSON.parse(a);if(b)S.bm=JSON.parse(b)}catch(e){}}
+function sH(){try{localStorage.setItem(K.h,JSON.stringify(S.hist.slice(0,1000)))}catch(e){}}
+function sB(){try{localStorage.setItem(K.b,JSON.stringify(S.bm))}catch(e){}}
 
-            // Tambahkan protocol jika tidak ada
-            if (!/^https?:\/\//i.test(url)) {
-                url = 'https://' + url;
-            }
+// Toast
+function toast(m,c,i){const t=document.createElement('div');t.className='tst '+c;t.innerHTML=`<i class="fa-solid ${i}" style="font-size:12px"></i><span>${m}</span>`;$('tC').appendChild(t);const a=$('tC').children;if(a.length>5)a[0].remove();setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),200)},2600)}
 
-            state.currentUrl = url;
-            urlInput.value = url;
+// Popup blocker
+window.open=function(...a){blk('window.open',a[0]);return null};
+document.addEventListener('click',function(e){const l=e.target.closest('a');if(l&&(l.target==='_blank'||l.target==='_new')){e.preventDefault();e.stopPropagation();blk('link',l.href)}},true);
+document.addEventListener('mousedown',function(e){const l=e.target.closest('a[href]');if(!l)return;if(l.getAttribute('target')==='_blank'){l.removeAttribute('target');l.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();try{$('bF').contentWindow.location.href=l.href}catch(er){nav(l.href)}},{once:true,capture:true})}},true);
+function blk(s,u){S.blk++;const el=$('blkC');el.textContent=S.blk;el.style.transform='scale(1.5)';setTimeout(()=>el.style.transform='',150);const d=u?u.length>35?u.slice(0,35)+'...':u:'?';toast('Diblokir: '+d,'tl','fa-ban')}
 
-            // Update history
-            if (state.historyIndex < state.history.length - 1) {
-                state.history = state.history.slice(0, state.historyIndex + 1);
-            }
-            state.history.push(url);
-            state.historyIndex = state.history.length - 1;
-            updateNavButtons();
+// Navigasi
+function nav(url){
+    url=nrm(url);if(!url)return;
+    S.url=url;$('urlI').value=url;
+    if(S.ni<S.nv.length-1)S.nv=S.nv.slice(0,S.ni+1);
+    S.nv.push(url);S.ni=S.nv.length-1;
+    uNav();aH(url);
+    $('ldB').classList.remove('run');void $('ldB').offsetWidth;$('ldB').classList.add('run');
+    $('wS').classList.add('off');$('eS').classList.remove('on');
+    $('bF').classList.add('on');$('bF').src=url;
+    uBm();cDD();rH()
+}
+function gBk(){if(S.ni<=0)return;S.ni--;const u=S.nv[S.ni];S.url=u;$('urlI').value=u;$('bF').src=u;uNav();uBm();rH();cDD()}
+function gFw(){if(S.ni>=S.nv.length-1)return;S.ni++;const u=S.nv[S.ni];S.url=u;$('urlI').value=u;$('bF').src=u;uNav();uBm();rH();cDD()}
+function gJ(i){S.ni=i;const u=S.nv[S.ni];S.url=u;$('urlI').value=u;$('bF').src=u;uNav();uBm();rH();cDD()}
+function gHm(){$('bF').classList.remove('on');$('bF').src='about:blank';$('wS').classList.remove('off');$('eS').classList.remove('on');$('urlI').value='';S.url='';uBm();rH();rB();setTimeout(()=>$('wSearchIn').focus(),100)}
+function gRf(){if(S.url){$('ldB').classList.remove('run');void $('ldB').offsetWidth;$('ldB').classList.add('run');$('bF').src=S.url}}
+function uNav(){$('nBk').classList.toggle('off',S.ni<=0);$('nFw').classList.toggle('off',S.ni>=S.nv.length-1)}
 
-            // Tampilkan loading
-            loadingBar.classList.remove('active');
-            void loadingBar.offsetWidth; // Trigger reflow
-            loadingBar.classList.add('active');
+// Nav dropdowns
+let bHT,fHT;
+function sDD(t){cDD();const dd=t==='b'?$('ddBk'):$('ddFw');const st=t==='b'?S.ni-1:S.ni+1;const en=t==='b'?Math.max(0,S.ni-20):Math.min(S.nv.length-1,S.ni+20);if((t==='b'&&st<0)||(t==='f'&&st>S.nv.length-1))return;let h='';if(t==='b'){for(let i=st;i>=en;i--)h+=`<div class="ndi" data-i="${i}"><i class="fa-solid fa-chevron-left"></i><span>${dom(S.nv[i])}</span></div>`}else{for(let i=st;i<=en;i++)h+=`<div class="ndi" data-i="${i}"><i class="fa-solid fa-chevron-right"></i><span>${dom(S.nv[i])}</span></div>`}dd.innerHTML=h;dd.querySelectorAll('.ndi').forEach(el=>el.addEventListener('click',()=>gJ(+el.dataset.i)));dd.classList.add('v')}
+function cDD(){$('ddBk').classList.remove('v');$('ddFw').classList.remove('v');clearTimeout(bHT);clearTimeout(fHT)}
 
-            // Sembunyikan welcome & error
-            welcomeScreen.classList.add('hidden');
-            errorScreen.classList.remove('active');
+// History
+function aH(u){if(S.hist.length>0&&S.hist[0].u===u)return;S.hist.unshift({u,t:dom(u),ts:Date.now(),f:fav(u)});if(S.hist.length>1000)S.hist.length=1000;sH();uHB()}
+function dH(i){S.hist.splice(i,1);sH();rH($('hS').value);uHB()}
+function cH(){S.hist=[];sH();rH();uHB();toast('Riwayat dihapus','tn','fa-circle-check')}
+function uHB(){const n=S.hist.length;const el=$('hB');if(n>0){el.textContent=n>99?'99+':n;el.classList.add('v')}else el.classList.remove('v')}
+function rH(q=''){
+    q=q.toLowerCase().trim();
+    const l=q?S.hist.filter(e=>e.u.toLowerCase().includes(q)||e.t.toLowerCase().includes(q)):S.hist;
+    if(!l.length){$('hL').innerHTML=`<div class="pe"><i class="fa-solid fa-clock-rotate-left"></i><p>${q?'Tidak ditemukan.':'Belum ada riwayat.'}</p></div>`;return}
+    const g={};l.forEach(e=>{const ri=S.hist.indexOf(e);const d=new Date(e.ts),td=new Date(),yd=new Date(td);yd.setDate(td.getDate()-1);let lb;if(d.toDateString()===td.toDateString())lb='Hari Ini';else if(d.toDateString()===yd.toDateString())lb='Kemarin';else lb=d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});if(!g[lb])g[lb]=[];g[lb].push({...e,ri})});
+    let h='';for(const[lb,items]of Object.entries(g)){h+=`<div class="pd">${lb}</div>`;items.forEach(it=>{const c=it.u===S.url;const tm=new Date(it.ts).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});h+=`<div class="pi${c?' cur':''}" data-u="${it.u}"><div class="pi-ic">${it.f?`<img src="${it.f}" onerror="this.parentNode.innerHTML='<i class=\\'fa-solid fa-globe\\'></i>'">`:'<i class="fa-solid fa-globe"></i>'}</div><div class="pi-bd"><div class="pi-t">${esc(it.t)}</div><div class="pi-u">${esc(it.u)}</div></div><span class="pi-tm">${tm}</span><button class="pi-x" data-ri="${it.ri}" aria-label="Hapus"><i class="fa-solid fa-xmark"></i></button></div>`})}
+    $('hL').innerHTML=h;
+    $('hL').querySelectorAll('.pi').forEach(el=>el.addEventListener('click',e=>{if(e.target.closest('.pi-x'))return;nav(el.dataset.u)}));
+    $('hL').querySelectorAll('.pi-x').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation();dH(+el.dataset.ri)}))
+}
 
-            // Update sandbox attribute berdasarkan pengaturan
-            updateSandbox();
+// Bookmarks
+function isBm(u){return S.bm.some(b=>b.u===u)}
+function tBm(u){if(!u)return;if(isBm(u)){rBm(u);return}S.bm.unshift({u,t:dom(u),ts:Date.now(),f:fav(u)});sB();uBm();uBB();rB();toast('Bookmark ditambahkan','tw','fa-bookmark')}
+function rBm(u){S.bm=S.bm.filter(b=>b.u!==u);sB();uBm();uBB();rB();toast('Bookmark dihapus','tn','fa-circle-check')}
+function dBi(i){S.bm.splice(i,1);sB();uBm();uBB();rB()}
+function cB(){S.bm=[];sB();uBm();uBB();rB();toast('Bookmark dihapus','tn','fa-circle-check')}
+function uBm(){const on=isBm(S.url);const el=$('uBm');el.classList.toggle('bo',on);el.innerHTML=on?'<i class="fa-solid fa-bookmark"></i>':'<i class="fa-regular fa-bookmark"></i>'}
+function uBB(){const n=S.bm.length;const el=$('bB');if(n>0){el.textContent=n>99?'99+':n;el.classList.add('v')}else el.classList.remove('v')}
+function rB(q=''){
+    q=q.toLowerCase().trim();
+    const l=q?S.bm.filter(e=>e.u.toLowerCase().includes(q)||e.t.toLowerCase().includes(q)):S.bm;
+    if(!l.length){$('bL').innerHTML=`<div class="pe"><i class="fa-regular fa-bookmark"></i><p>${q?'Tidak ditemukan.':'Belum ada bookmark.'}</p></div>`;return}
+    let h='';l.forEach(it=>{const ri=S.bm.indexOf(it);const c=it.u===S.url;const dt=new Date(it.ts).toLocaleDateString('id-ID',{day:'numeric',month:'short'});h+=`<div class="pi${c?' cur':''}" data-u="${it.u}"><div class="pi-ic">${it.f?`<img src="${it.f}" onerror="this.parentNode.innerHTML='<i class=\\'fa-solid fa-globe\\'></i>'">`:'<i class="fa-solid fa-globe"></i>'}</div><div class="pi-bd"><div class="pi-t">${esc(it.t)}</div><div class="pi-u">${esc(it.u)}</div></div><span class="pi-tm">${dt}</span><button class="pi-x" data-bi="${ri}" aria-label="Hapus"><i class="fa-solid fa-xmark"></i></button></div>`});
+    $('bL').innerHTML=h;
+    $('bL').querySelectorAll('.pi').forEach(el=>el.addEventListener('click',e=>{if(e.target.closest('.pi-x'))return;nav(el.dataset.u)}));
+    $('bL').querySelectorAll('.pi-x').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation();dBi(+el.dataset.bi)}))
+}
 
-            // Muat iframe
-            browseFrame.classList.add('active');
-            browseFrame.src = url;
+// Import/Ekspor
+function expD(t){const d=t==='h'?S.hist:S.bm;if(!d.length){toast('Data kosong','tw','fa-triangle-exclamation');return}const bl=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download=`aegis_${t}_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);toast((t==='h'?'Riwayat':'Bookmark')+' diekspor','tn','fa-circle-check')}
+function impD(t){const inp=$('impF');inp.onchange=function(){const f=this.files[0];if(!f)return;const r=new FileReader();r.onload=function(e){try{const d=JSON.parse(e.target.result);if(!Array.isArray(d))throw 0;if(t==='h'){S.hist=d.concat(S.hist);const s=new Set();S.hist=S.hist.filter(x=>{if(s.has(x.u))return false;s.add(x.u);return true});S.hist.sort((a,b)=>b.ts-a.ts);if(S.hist.length>1000)S.hist.length=1000;sH();uHB();rH($('hS').value)}else{S.bm=d.concat(S.bm);const s=new Set();S.bm=S.bm.filter(x=>{if(s.has(x.u))return false;s.add(x.u);return true});sB();uBB();rB($('bS').value);uBm()}toast('Berhasil impor '+d.length+' item','tn','fa-circle-check')}catch(er){toast('File tidak valid','tl','fa-ban')}};r.readAsText(f);this.value=''};inp.click()}
 
-            showToast(`Memuat: ${new URL(url).hostname}`, 'info-toast', 'fa-shield-halved');
-        }
+// Panel toggle
+function tHP(){S.hp=!S.hp;$('pH').classList.toggle('open',S.hp);$('tH').classList.toggle('on',S.hp);if(S.hp){rH($('hS').value);$('hS').focus()}}
+function tBP(){S.bp=!S.bp;$('pB').classList.toggle('open',S.bp);$('tB').classList.toggle('on',S.bp);if(S.bp){rB($('bS').value);$('bS').focus()}}
 
-        function updateSandbox() {
-            let sandbox = '';
-            if (state.settings.allowJS) sandbox += 'allow-scripts ';
-            if (state.settings.allowForms) sandbox += 'allow-forms ';
-            sandbox += 'allow-same-origin ';
-            // Tidak pernah menambahkan allow-popups agar pop-up selalu diblokir
-            sandbox += 'allow-top-navigation-by-user-activation';
-            browseFrame.setAttribute('sandbox', sandbox.trim());
-        }
+// Iframe load → title
+ $('bF').addEventListener('load',()=>{$('ldB').classList.remove('run');$('ldB').style.width='100%';try{const t=$('bF').contentDocument?.title;if(t&&S.url){const h=S.hist.find(e=>e.u===S.url);if(h){h.t=t;sH()}const b=S.bm.find(e=>e.u===S.url);if(b){b.t=t;sB()}}}catch(e){}rH($('hS').value);rB($('bS').value)});
+ $('bF').addEventListener('error',()=>{$('bF').classList.remove('on');$('bF').src='about:blank';$('eS').classList.add('on')});
 
-        function goHome() {
-            browseFrame.classList.remove('active');
-            browseFrame.src = 'about:blank';
-            welcomeScreen.classList.remove('hidden');
-            errorScreen.classList.remove('active');
-            urlInput.value = '';
-            state.currentUrl = '';
-        }
+// Events
+ $('uGo').addEventListener('click',()=>nav($('urlI').value.trim()));
+ $('urlI').addEventListener('keydown',e=>{if(e.key==='Enter')nav($('urlI').value.trim())});
+ $('nBk').addEventListener('click',e=>{e.stopPropagation();clearTimeout(bHT);if(S.ni>0)gBk();else cDD()});
+ $('nFw').addEventListener('click',e=>{e.stopPropagation();clearTimeout(fHT);if(S.ni<S.nv.length-1)gFw();else cDD()});
+ $('nRf').addEventListener('click',gRf);
+ $('nHm').addEventListener('click',gHm);
+ $('eBk').addEventListener('click',gHm);
+ $('uBm').addEventListener('click',()=>tBm(S.url));
+ $('logoBtn').addEventListener('click',gHm);
 
-        function goBack() {
-            if (state.historyIndex > 0) {
-                state.historyIndex--;
-                const url = state.history[state.historyIndex];
-                state.currentUrl = url;
-                urlInput.value = url;
-                updateSandbox();
-                browseFrame.src = url;
-                updateNavButtons();
-            }
-        }
+// Search box besar di welcome
+ $('wSearchIn').addEventListener('keydown',e=>{if(e.key==='Enter'){const v=$('wSearchIn').value.trim();if(v)nav(v)}});
+ $('wSearchGo').addEventListener('click',()=>{const v=$('wSearchIn').value.trim();if(v)nav(v)});
 
-        function goForward() {
-            if (state.historyIndex < state.history.length - 1) {
-                state.historyIndex++;
-                const url = state.history[state.historyIndex];
-                state.currentUrl = url;
-                urlInput.value = url;
-                updateSandbox();
-                browseFrame.src = url;
-                updateNavButtons();
-            }
-        }
+// Hover dropdown
+ $('nBk').addEventListener('mouseenter',()=>{bHT=setTimeout(()=>sDD('b'),350)});
+ $('nBk').addEventListener('mouseleave',()=>clearTimeout(bHT));
+ $('nFw').addEventListener('mouseenter',()=>{fHT=setTimeout(()=>sDD('f'),350)});
+ $('nFw').addEventListener('mouseleave',()=>clearTimeout(fHT));
 
-        function refreshPage() {
-            if (state.currentUrl) {
-                loadingBar.classList.remove('active');
-                void loadingBar.offsetWidth;
-                loadingBar.classList.add('active');
-                updateSandbox();
-                browseFrame.src = state.currentUrl;
-            }
-        }
+// Panels
+ $('tH').addEventListener('click',tHP);
+ $('tB').addEventListener('click',tBP);
+ $('hX').addEventListener('click',()=>{S.hp=false;$('pH').classList.remove('open');$('tH').classList.remove('on')});
+ $('bX').addEventListener('click',()=>{S.bp=false;$('pB').classList.remove('open');$('tB').classList.remove('on')});
+ $('hCl').addEventListener('click',cH);
+ $('bCl').addEventListener('click',cB);
+ $('hS').addEventListener('input',()=>rH($('hS').value));
+ $('bS').addEventListener('input',()=>rB($('bS').value));
+ $('hEx').addEventListener('click',()=>expD('h'));
+ $('hIm').addEventListener('click',()=>impD('h'));
+ $('bEx').addEventListener('click',()=>expD('b'));
+ $('bIm').addEventListener('click',()=>impD('b'));
 
-        function updateNavButtons() {
-            btnBack.classList.toggle('disabled', state.historyIndex <= 0);
-            btnForward.classList.toggle('disabled', state.historyIndex >= state.history.length - 1);
-        }
+// Quick links
+document.querySelectorAll('.w-link').forEach(el=>el.addEventListener('click',e=>{e.preventDefault();nav(el.dataset.u)}));
 
-        // === Event Listeners ===
-        btnGo.addEventListener('click', () => navigateTo(urlInput.value.trim()));
-        urlInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') navigateTo(urlInput.value.trim());
-        });
-        urlInput.addEventListener('input', () => {
-            btnGo.classList.toggle('visible', urlInput.value.trim().length > 0);
-        });
-        btnBack.addEventListener('click', goBack);
-        btnForward.addEventListener('click', goForward);
-        btnRefresh.addEventListener('click', refreshPage);
-        btnHome.addEventListener('click', goHome);
-        btnErrorBack.addEventListener('click', goHome);
+document.addEventListener('click',e=>{if(!e.target.closest('.nav'))cDD()});
 
-        // Quick links
-        document.querySelectorAll('.quick-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                navigateTo(link.dataset.url);
-            });
-        });
+// Keyboard
+document.addEventListener('keydown',e=>{
+    const inp=document.activeElement.tagName==='INPUT';
+    if(e.ctrlKey&&e.key==='l'){e.preventDefault();$('urlI').focus();$('urlI').select()}
+    if(e.ctrlKey&&e.key==='d'){e.preventDefault();tBm(S.url)}
+    if(e.key==='Escape'){cDD();if(S.hp){S.hp=false;$('pH').classList.remove('open');$('tH').classList.remove('on')}if(S.bp){S.bp=false;$('pB').classList.remove('open');$('tB').classList.remove('on')}$('urlI').blur();$('wSearchIn').blur()}
+    if(e.altKey&&e.key==='ArrowLeft'){e.preventDefault();if(S.ni>0)gBk()}
+    if(e.altKey&&e.key==='ArrowRight'){e.preventDefault();if(S.ni<S.nv.length-1)gFw()}
+    if(e.key==='F5'){e.preventDefault();gRf()}
+    if(!inp&&e.key==='h'&&!e.ctrlKey&&!e.altKey&&!e.metaKey)tHP();
+    if(!inp&&e.key==='b'&&!e.ctrlKey&&!e.altKey&&!e.metaKey)tBP();
+    // Fokus ke search box besar saat di welcome & bukan di input
+    if(!inp&&e.key==='/'&&document.activeElement.tagName!=='INPUT'){e.preventDefault();if(!$('wS').classList.contains('off')){$('wSearchIn').focus()}}
+});
 
-        // Iframe load handler
-        browseFrame.addEventListener('load', () => {
-            loadingBar.classList.remove('active');
-            loadingBar.style.width = '100%';
-        });
-
-        // Iframe error handler
-        browseFrame.addEventListener('error', () => {
-            showError();
-        });
-
-        function showError() {
-            browseFrame.classList.remove('active');
-            browseFrame.src = 'about:blank';
-            errorScreen.classList.add('active');
-        }
-
-        // Timeout untuk deteksi website yang memblokir iframe
-        let iframeTimeout;
-        const originalNavigateTo = navigateTo;
-        navigateTo = function(url) {
-            originalNavigateTo(url);
-            clearTimeout(iframeTimeout);
-            iframeTimeout = setTimeout(() => {
-                // Jika setelah 5 detik masih loading, mungkin diblokir
-                // Tapi kita tidak bisa mendeteksi ini dengan pasti
-            }, 5000);
-        };
-
-        // === Settings Panel ===
-        btnSettings.addEventListener('click', () => {
-            settingsOverlay.classList.add('open');
-        });
-
-        btnCloseSettings.addEventListener('click', () => {
-            settingsOverlay.classList.remove('open');
-        });
-
-        settingsOverlay.addEventListener('click', (e) => {
-            if (e.target === settingsOverlay) {
-                settingsOverlay.classList.remove('open');
-            }
-        });
-
-        // Toggle switches
-        document.querySelectorAll('.toggle').forEach(toggle => {
-            toggle.addEventListener('click', () => {
-                const setting = toggle.dataset.setting;
-                const isOn = toggle.classList.toggle('on');
-                toggle.setAttribute('aria-checked', isOn);
-                state.settings[setting] = isOn;
-
-                // Update sandbox saat pengaturan JS/Form berubah
-                if (setting === 'allowJS' || setting === 'allowForms') {
-                    if (state.currentUrl) {
-                        updateSandbox();
-                        refreshPage();
-                    }
-                }
-
-                if (setting === 'blockPopups' && !isOn) {
-                    showToast('Peringatan: Pop-up tidak diblokir', 'warn-toast', 'fa-triangle-exclamation');
-                }
-            });
-
-            toggle.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    toggle.click();
-                }
-            });
-        });
-
-        // === Keyboard shortcuts ===
-        document.addEventListener('keydown', (e) => {
-            // Ctrl+L: Fokus ke URL bar
-            if (e.ctrlKey && e.key === 'l') {
-                e.preventDefault();
-                urlInput.focus();
-                urlInput.select();
-            }
-            // Escape: Tutup settings
-            if (e.key === 'Escape') {
-                settingsOverlay.classList.remove('open');
-            }
-            // Alt+Left: Kembali
-            if (e.altKey && e.key === 'ArrowLeft') {
-                e.preventDefault();
-                goBack();
-            }
-            // Alt+Right: Maju
-            if (e.altKey && e.key === 'ArrowRight') {
-                e.preventDefault();
-                goForward();
-            }
-            // F5: Refresh
-            if (e.key === 'F5') {
-                e.preventDefault();
-                refreshPage();
-            }
-        });
-
-        // === Deteksi dan tangkap pop-up melalui message event ===
-        window.addEventListener('message', function(e) {
-            // Beberapa iklan menggunakan postMessage untuk membuka pop-up
-            if (e.data && typeof e.data === 'object' && e.data.type === 'open-url') {
-                if (state.settings.blockPopups) {
-                    blockPopup('postMessage', e.data.url);
-                }
-            }
-        });
-
-        // === Intercept semua anchor click di document level ===
-        // Menangkap link yang mungkin lolos dari filter sebelumnya
-        document.addEventListener('mousedown', function(e) {
-            const link = e.target.closest('a[href]');
-            if (!link) return;
-
-            const href = link.getAttribute('href');
-            if (!href) return;
-
-            // Jika link mencoba membuka window baru
-            if (link.getAttribute('target') === '_blank') {
-                if (state.settings.blockNewNav) {
-                    link.removeAttribute('target');
-                    link.addEventListener('click', function(ev) {
-                        ev.preventDefault();
-                        ev.stopPropagation();
-                        // Navigasi di dalam iframe
-                        try {
-                            if (browseFrame.contentWindow) {
-                                browseFrame.contentWindow.location.href = href;
-                            }
-                        } catch(err) {
-                            // Cross-origin, coba navigasi iframe langsung
-                            navigateTo(href);
-                        }
-                    }, { once: true, capture: true });
-                }
-            }
-        }, true);
-
-        // === Fokus URL bar saat halaman pertama kali dimuat ===
-        setTimeout(() => {
-            urlInput.focus();
-        }, 500);
-
-        // === Partikel kecil di background welcome screen ===
-        (function initParticles() {
-            const canvas = document.createElement('canvas');
-            canvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;opacity:0.4;';
-            welcomeScreen.insertBefore(canvas, welcomeScreen.firstChild);
-
-            const ctx = canvas.getContext('2d');
-            let particles = [];
-            let animId;
-
-            function resize() {
-                canvas.width = welcomeScreen.offsetWidth;
-                canvas.height = welcomeScreen.offsetHeight;
-            }
-
-            function createParticle() {
-                return {
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    size: Math.random() * 2 + 0.5,
-                    speedX: (Math.random() - 0.5) * 0.3,
-                    speedY: (Math.random() - 0.5) * 0.3,
-                    opacity: Math.random() * 0.5 + 0.2
-                };
-            }
-
-            function init() {
-                resize();
-                particles = [];
-                const count = Math.min(60, Math.floor((canvas.width * canvas.height) / 15000));
-                for (let i = 0; i < count; i++) {
-                    particles.push(createParticle());
-                }
-            }
-
-            function draw() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                particles.forEach(p => {
-                    p.x += p.speedX;
-                    p.y += p.speedY;
-
-                    if (p.x < 0) p.x = canvas.width;
-                    if (p.x > canvas.width) p.x = 0;
-                    if (p.y < 0) p.y = canvas.height;
-                    if (p.y > canvas.height) p.y = 0;
-
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, Math.max(0.1, p.size), 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(0, 230, 138, ${p.opacity})`;
-                    ctx.fill();
-                });
-
-                // Garis koneksi antar partikel yang dekat
-                for (let i = 0; i < particles.length; i++) {
-                    for (let j = i + 1; j < particles.length; j++) {
-                        const dx = particles[i].x - particles[j].x;
-                        const dy = particles[i].y - particles[j].y;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist < 100) {
-                            ctx.beginPath();
-                            ctx.moveTo(particles[i].x, particles[i].y);
-                            ctx.lineTo(particles[j].x, particles[j].y);
-                            ctx.strokeStyle = `rgba(0, 230, 138, ${0.08 * (1 - dist / 100)})`;
-                            ctx.lineWidth = 0.5;
-                            ctx.stroke();
-                        }
-                    }
-                }
-
-                animId = requestAnimationFrame(draw);
-            }
-
-            init();
-            draw();
-
-            window.addEventListener('resize', () => {
-                cancelAnimationFrame(animId);
-                init();
-                draw();
-            });
-        })();
-    </script>
+// Init
+ld();uHB();uBB();uNav();rH();rB();
+setTimeout(()=>$('wSearchIn').focus(),350);
+</script>
 </body>
 </html>
